@@ -332,6 +332,64 @@ export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
           )}
         </div>
 
+        {/* Regional Payment & Fulfillment Badges (Yaoota Egypt/MENA Signals) */}
+        {tierInfo.fulfillment_badges && (
+          <div
+            className="matrix-fulfillment-box"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 6,
+              marginBottom: 10
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.71rem',
+                padding: '3px 8px',
+                borderRadius: 6,
+                fontWeight: 600,
+                background: tierInfo.fulfillment_badges.cod_available
+                  ? 'rgba(16, 185, 129, 0.12)'
+                  : 'rgba(148, 163, 184, 0.12)',
+                color: tierInfo.fulfillment_badges.cod_available ? '#10b981' : 'inherit'
+              }}
+            >
+              {isAr
+                ? tierInfo.fulfillment_badges.cod_label_ar
+                : tierInfo.fulfillment_badges.cod_label_en}
+            </span>
+            {tierInfo.fulfillment_badges.installments_available && (
+              <span
+                style={{
+                  fontSize: '0.71rem',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  background: 'rgba(99, 102, 241, 0.12)',
+                  color: '#818cf8'
+                }}
+              >
+                {isAr
+                  ? tierInfo.fulfillment_badges.installments_label_ar
+                  : tierInfo.fulfillment_badges.installments_label_en}
+              </span>
+            )}
+            <span
+              style={{
+                fontSize: '0.71rem',
+                padding: '3px 8px',
+                borderRadius: 6,
+                background: 'rgba(148, 163, 184, 0.1)'
+              }}
+            >
+              {isAr
+                ? tierInfo.fulfillment_badges.delivery_ar
+                : tierInfo.fulfillment_badges.delivery_en}
+            </span>
+          </div>
+        )}
+
         {/* Material or Verdict Summary */}
         <div className="matrix-material-summary">
           {tierInfo.material_summary || ''}

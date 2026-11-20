@@ -50,6 +50,19 @@ export interface PriceHistoryInsight {
   points: PriceHistoryPoint[];
 }
 
+export interface FulfillmentBadges {
+  cod_available: boolean;
+  cod_label_en: string;
+  cod_label_ar: string;
+  installments_available: boolean;
+  installments_label_en: string;
+  installments_label_ar: string;
+  delivery_en: string;
+  delivery_ar: string;
+  fulfillment_en: string;
+  fulfillment_ar: string;
+}
+
 export interface PriceTierInfo {
   tier?: string;
   tier_label?: string;
@@ -72,6 +85,7 @@ export interface PriceTierInfo {
   shipping_info?: Record<string, any>;
   warranty_info?: string;
   stock_status?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'UNAVAILABLE';
+  fulfillment_badges?: FulfillmentBadges | null;
   price_history?: PriceHistoryInsight | null;
 }
 

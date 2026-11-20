@@ -969,6 +969,17 @@
         <div style="margin-top:5px; padding:4px 7px; border-radius:5px; font-size:9.5px; font-weight:700; background:${verdictColor}15; color:${verdictColor};">
           ${escapeHtml(isAr ? (ph.discount_verdict_ar || ph.discount_verdict_en) : ph.discount_verdict_en)}
         </div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
+          <span style="font-size:8.5px; font-weight:700; padding:2px 6px; border-radius:4px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">
+            💵 ${isAr ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+          </span>
+          <span style="font-size:8.5px; font-weight:700; padding:2px 6px; border-radius:4px; background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe;">
+            💳 ${isAr ? 'تقسيط 0% (بنكي / فاليو / شهري)' : '0% Installments (Bank / BNPL)'}
+          </span>
+          <span style="font-size:8.5px; font-weight:600; padding:2px 6px; border-radius:4px; background:#f1f5f9; color:#334155;">
+            🚚 ${isAr ? 'توصيل 1–3 أيام' : '1–3d Express'}
+          </span>
+        </div>
       </div>
     `;
   }

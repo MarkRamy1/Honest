@@ -125,6 +125,59 @@ class HonestAuditService:
             "points": points
         }
 
+    def build_fulfillment_badges(
+        self,
+        tier: str,
+        is_verified: bool = False,
+        is_buy_enabled: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Builds Yaoota-inspired MENA/Egypt payment & fulfillment signals
+        (Cash on Delivery, BNPL/Bank Installments, Delivery Window, and Warranty).
+        """
+        if not is_verified:
+            return None
+
+        if tier == "original":
+            return {
+                "cod_available": True,
+                "cod_label_en": "💵 Cash on Delivery",
+                "cod_label_ar": "💵 الدفع عند الاستلام",
+                "installments_available": True,
+                "installments_label_en": "💳 0% Installments (Bank / BNPL)",
+                "installments_label_ar": "💳 تقسيط بنكي وشهري/فاليو",
+                "delivery_en": "🚚 1–3 Days Express Delivery",
+                "delivery_ar": "🚚 توصيل سريع خلال 1–3 أيام",
+                "fulfillment_en": "✓ Official Store Fulfillment & Local Warranty",
+                "fulfillment_ar": "✓ شحن المتجر الرسمي وضمان محلي معتمد"
+            }
+        elif tier == "high-copy":
+            return {
+                "cod_available": False,
+                "cod_label_en": "💳 Pre-paid / Escrow Only",
+                "cod_label_ar": "💳 دفع مسبق فقط",
+                "installments_available": False,
+                "installments_label_en": "No Local BNPL",
+                "installments_label_ar": "لا يدعم التقسيط المحلي",
+                "delivery_en": "✈️ 10–18 Days Cross-Border Shipping",
+                "delivery_ar": "✈️ شحن دولي خلال 10–18 يوماً",
+                "fulfillment_en": "⚠️ 3rd-Party Overseas Batch (No Brand Warranty)",
+                "fulfillment_ar": "⚠️ بائع طرف ثالث خارجي (بدون ضمان الوكيل)"
+            }
+        else:
+            return {
+                "cod_available": True,
+                "cod_label_en": "💵 COD Subject to Seller",
+                "cod_label_ar": "💵 دفع عند الاستلام حسب البائع",
+                "installments_available": False,
+                "installments_label_en": "Standard Checkout",
+                "installments_label_ar": "دفع عادي",
+                "delivery_en": "📦 3–7 Days Marketplace Delivery",
+                "delivery_ar": "📦 توصيل خلال 3–7 أيام",
+                "fulfillment_en": "ℹ️ Marketplace 3rd-Party Seller",
+                "fulfillment_ar": "ℹ️ بائع سوق مفتوح (راجع سياسة الاسترجاع)"
+            }
+
     def clean_product_query(self, raw_title: str) -> str:
         parts = re.split(r'[-–|,]', raw_title)
         clean = parts[0].strip() if parts else raw_title.strip()
@@ -543,6 +596,7 @@ reality_synthesis_prompt"""
                 "retrieval_timestamp": orig_price_rec.retrieval_timestamp,
                 "warranty_info": "Manufacturer warranty verified" if has_verified else "Unverified",
                 "stock_status": "IN_STOCK" if (has_verified and validated_pdp.is_buy_button_enabled) else "UNAVAILABLE",
+                "fulfillment_badges": self.build_fulfillment_badges("original", has_verified, validated_pdp.is_buy_button_enabled),
                 "price_history": self.build_price_history_insights(
                     current_usd=orig_usd,
                     retail_msrp_usd=orig_usd * 1.12 if has_verified else None,
@@ -567,7 +621,8 @@ reality_synthesis_prompt"""
                 "button_text": "Direct Batch Link Unavailable",
                 "verification_status": "UNVERIFIED",
                 "condition": "Alternative Batch",
-                "retrieval_timestamp": datetime.now(timezone.utc).isoformat()
+                "retrieval_timestamp": datetime.now(timezone.utc).isoformat(),
+                "fulfillment_badges": self.build_fulfillment_badges("high-copy", has_verified, False)
             },
             "copy": {
                 "tier": "copy",
@@ -586,7 +641,8 @@ reality_synthesis_prompt"""
                 "button_text": "Purchase Link Unavailable",
                 "verification_status": "UNVERIFIED",
                 "condition": "Budget Dupe",
-                "retrieval_timestamp": datetime.now(timezone.utc).isoformat()
+                "retrieval_timestamp": datetime.now(timezone.utc).isoformat(),
+                "fulfillment_badges": self.build_fulfillment_badges("copy", has_verified, False)
             }
         }
 
@@ -722,6 +778,7 @@ reality_synthesis_prompt"""
                 "retrieval_timestamp": top.get("price_record", {}).get("retrieval_timestamp", datetime.now(timezone.utc).isoformat()),
                 "warranty_info": top.get("warranty", "Standard Return Policy"),
                 "stock_status": "IN_STOCK" if top.get("is_buy_button_enabled", True) else "OUT_OF_STOCK",
+                "fulfillment_badges": self.build_fulfillment_badges("original", True, top.get("is_buy_button_enabled", True)),
                 "price_history": self.build_price_history_insights(
                     current_usd=float(top["price_usd"]),
                     retail_msrp_usd=float(top.get("retail_msrp_usd", top["price_usd"] * 1.12)),
@@ -748,6 +805,7 @@ reality_synthesis_prompt"""
                 "retrieval_timestamp": premium.get("price_record", {}).get("retrieval_timestamp", datetime.now(timezone.utc).isoformat()),
                 "warranty_info": premium.get("warranty", "Standard Return Policy"),
                 "stock_status": "IN_STOCK" if premium.get("is_buy_button_enabled", True) else "OUT_OF_STOCK",
+                "fulfillment_badges": self.build_fulfillment_badges("original", True, premium.get("is_buy_button_enabled", True)),
                 "price_history": self.build_price_history_insights(
                     current_usd=float(premium["price_usd"]),
                     retail_msrp_usd=float(premium.get("retail_msrp_usd", premium["price_usd"] * 1.10)),
@@ -774,6 +832,7 @@ reality_synthesis_prompt"""
                 "retrieval_timestamp": budget_pick.get("price_record", {}).get("retrieval_timestamp", datetime.now(timezone.utc).isoformat()),
                 "warranty_info": budget_pick.get("warranty", "Standard Return Policy"),
                 "stock_status": "IN_STOCK" if budget_pick.get("is_buy_button_enabled", True) else "OUT_OF_STOCK",
+                "fulfillment_badges": self.build_fulfillment_badges("original", True, budget_pick.get("is_buy_button_enabled", True)),
                 "price_history": self.build_price_history_insights(
                     current_usd=float(budget_pick["price_usd"]),
                     retail_msrp_usd=float(budget_pick.get("retail_msrp_usd", budget_pick["price_usd"] * 1.15)),
