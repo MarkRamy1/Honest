@@ -1,5 +1,5 @@
 import React from 'react';
-import { PriceMatrix, PriceTierInfo } from '../types';
+import { PriceMatrix, PriceTierInfo, PriceHistoryInsight } from '../types';
 
 interface PricingMatrixCardProps {
   matrix: PriceMatrix;
@@ -29,6 +29,182 @@ export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
     } catch {
       return null;
     }
+  };
+
+  const renderSteppedPriceChart = (history: PriceHistoryInsight) => {
+    const pts = history.points || [];
+    if (pts.length < 2) return null;
+
+    const vals = pts.map((p) => p.price_usd);
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+    const span = maxVal - minVal || 1;
+
+    const width = 260;
+    const height = 64;
+    const padX = 10;
+    const padY = 10;
+    const plotW = width - padX * 2;
+    const plotH = height - padY * 2;
+
+    const coords = pts.map((p, idx) => {
+      const x = padX + (idx / (pts.length - 1)) * plotW;
+      const y = padY + plotH - ((p.price_usd - minVal) / span) * plotH;
+      return { x, y, pt: p };
+    });
+
+    // Build stepped path (horizontal then vertical, matching Yaoota steppedLine: true)
+    let pathD = `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`;
+    for (let i = 1; i < coords.length; i++) {
+      pathD += ` H ${coords[i].x.toFixed(1)} V ${coords[i].y.toFixed(1)}`;
+    }
+
+    const areaD = `${pathD} V ${height - 4} H ${coords[0].x.toFixed(1)} Z`;
+
+    const verdictColor =
+      history.discount_verdict === 'REAL_DROP'
+        ? '#10b981'
+        : history.discount_verdict === 'INFLATED_MSRP'
+        ? '#f59e0b'
+        : '#6366f1';
+
+    return (
+      <div
+        className="matrix-price-history-box"
+        style={{
+          marginTop: 12,
+          marginBottom: 12,
+          padding: '10px 12px',
+          borderRadius: 10,
+          background: 'rgba(99, 102, 241, 0.06)',
+          border: '1px solid rgba(99, 102, 241, 0.18)'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 6,
+            fontSize: '0.76rem',
+            fontWeight: 600
+          }}
+        >
+          <span>📈 {isAr ? 'تاريخ السعر (90 يوماً)' : '90-Day Stepped Price History'}</span>
+          {history.price_drop_14d_percent > 0 && (
+            <span
+              style={{
+                padding: '2px 7px',
+                borderRadius: 99,
+                background: 'rgba(16, 185, 129, 0.16)',
+                color: '#10b981',
+                fontSize: '0.72rem'
+              }}
+            >
+              ↓ {history.price_drop_14d_percent}% (14d)
+            </span>
+          )}
+        </div>
+
+        {/* Stepped SVG Sparkline with High/Low Watermarks */}
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ width: '100%', height: 64, display: 'block', overflow: 'visible' }}
+          role="img"
+          aria-label={isAr ? 'مخطط تاريخ السعر' : 'Stepped price history chart'}
+        >
+          {/* Highest Price Dashed Watermark */}
+          <line
+            x1={padX}
+            y1={padY}
+            x2={width - padX}
+            y2={padY}
+            stroke="rgba(239, 68, 68, 0.45)"
+            strokeDasharray="3 3"
+            strokeWidth="1"
+          />
+          {/* Lowest Price Dashed Watermark */}
+          <line
+            x1={padX}
+            y1={padY + plotH}
+            x2={width - padX}
+            y2={padY + plotH}
+            stroke="rgba(16, 185, 129, 0.5)"
+            strokeDasharray="3 3"
+            strokeWidth="1"
+          />
+          {/* Stepped Shaded Area */}
+          <path d={areaD} fill={`${verdictColor}18`} />
+          {/* Stepped Line */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke={verdictColor}
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Data Points */}
+          {coords.map((c, idx) => {
+            const isMax = c.pt.price_usd === maxVal;
+            const isMin = c.pt.price_usd === minVal;
+            const dotColor = isMin ? '#10b981' : isMax ? '#ef4444' : verdictColor;
+            return (
+              <circle
+                key={idx}
+                cx={c.x}
+                cy={c.y}
+                r={idx === coords.length - 1 || isMin || isMax ? 3.5 : 2.2}
+                fill={dotColor}
+              >
+                <title>
+                  {`${isAr ? c.pt.label_ar : c.pt.label_en}: ${c.pt.formatted_usd} (${c.pt.formatted_egp})`}
+                </title>
+              </circle>
+            );
+          })}
+        </svg>
+
+        {/* High / 90d Avg / Low Watermarks Row */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '0.72rem',
+            opacity: 0.88,
+            marginTop: 4,
+            paddingTop: 4,
+            borderTop: '1px dashed rgba(148, 163, 184, 0.25)'
+          }}
+        >
+          <span style={{ color: '#10b981', fontWeight: 600 }}>
+            {isAr ? `أقل سعر: ${history.lowest_usd}` : `Low: ${history.lowest_usd}`}
+          </span>
+          <span>
+            {isAr ? `المتوسط: ${history.avg_90d_usd}` : `90d Avg: ${history.avg_90d_usd}`}
+          </span>
+          <span style={{ color: '#ef4444', fontWeight: 600 }}>
+            {isAr ? `أعلى سعر: ${history.highest_usd}` : `High: ${history.highest_usd}`}
+          </span>
+        </div>
+
+        {/* Honest Fake-Discount / Price Drop Verdict Banner */}
+        <div
+          style={{
+            marginTop: 6,
+            padding: '5px 8px',
+            borderRadius: 6,
+            fontSize: '0.73rem',
+            fontWeight: 600,
+            background: `${verdictColor}16`,
+            color: verdictColor
+          }}
+        >
+          {isAr ? history.discount_verdict_ar : history.discount_verdict_en}
+        </div>
+      </div>
+    );
   };
 
   const renderTierCard = (
@@ -105,6 +281,20 @@ export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
                 : tierInfo.condition}
             </span>
           )}
+
+          {tierInfo.stock_status === 'IN_STOCK' && (
+            <span
+              className="matrix-condition-pill"
+              style={{
+                background: 'rgba(16, 185, 129, 0.14)',
+                color: '#10b981',
+                fontWeight: 600
+              }}
+              title={isAr ? 'تم التحقق من توفر المخزون' : 'Live stock availability verified'}
+            >
+              🟢 {isAr ? 'متوفر حالياً · Live' : 'In Stock · Live'}
+            </span>
+          )}
         </div>
 
         {/* Pricing Body */}
@@ -126,6 +316,9 @@ export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
             {tierInfo.savings || (isAr ? 'المواصفات معتمدة' : 'Verified Specs')}
           </div>
         </div>
+
+        {/* Stepped 90-Day Price History & Fake-Discount Detector */}
+        {tierInfo.price_history && renderSteppedPriceChart(tierInfo.price_history)}
 
         {/* Store & Warranty Info */}
         <div className="matrix-store-info">

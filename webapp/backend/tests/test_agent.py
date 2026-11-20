@@ -55,3 +55,29 @@ def test_agent_autonomous_research_workflow(client):
     assert data["status"] == "success"
     assert len(data["workflow_steps"]) >= 4
     assert data["recommendation"]["top_value_pick"] is not None
+
+
+def test_agent_stepped_price_history_and_fake_discount_detector(client):
+    # 1. Verified product should include 90-day stepped price history watermarks & stock status
+    res = client.post("/api/agent/ask", json={
+        "question": "Sony WH-1000XM5 Wireless Headphones",
+        "tier": "all"
+    })
+    assert res.status_code == 200
+    orig = res.json()["price_matrix"]["original"]
+    assert orig["stock_status"] == "IN_STOCK"
+    ph = orig["price_history"]
+    assert ph is not None
+    assert len(ph["points"]) == 6
+    assert ph["lowest_usd"].startswith("$")
+    assert ph["highest_usd"].startswith("$")
+    assert ph["avg_90d_usd"].startswith("$")
+    assert ph["discount_verdict"] in ("REAL_DROP", "INFLATED_MSRP", "FAIR_MARKET")
+
+    # 2. Unverified product must never fabricate price history
+    unverified_res = client.post("/api/agent/ask", json={
+        "question": "NonExistentQuantumPhone9999XYZ",
+        "tier": "all"
+    })
+    assert unverified_res.status_code == 200
+    assert unverified_res.json()["price_matrix"]["original"].get("price_history") is None

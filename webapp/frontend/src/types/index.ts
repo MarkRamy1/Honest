@@ -27,6 +27,29 @@ export interface MaterialVerdict {
   discrepancies?: string[];
 }
 
+export interface PriceHistoryPoint {
+  label_en: string;
+  label_ar: string;
+  price_usd: number;
+  formatted_usd: string;
+  formatted_egp: string;
+}
+
+export interface PriceHistoryInsight {
+  lowest_usd: string;
+  lowest_egp: string;
+  highest_usd: string;
+  highest_egp: string;
+  avg_90d_usd: string;
+  avg_90d_egp: string;
+  price_drop_14d_percent: number;
+  discount_verdict: 'REAL_DROP' | 'INFLATED_MSRP' | 'FAIR_MARKET';
+  discount_verdict_en: string;
+  discount_verdict_ar: string;
+  stock_status?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'UNAVAILABLE';
+  points: PriceHistoryPoint[];
+}
+
 export interface PriceTierInfo {
   tier?: string;
   tier_label?: string;
@@ -48,6 +71,8 @@ export interface PriceTierInfo {
   retrieval_timestamp?: string;
   shipping_info?: Record<string, any>;
   warranty_info?: string;
+  stock_status?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'UNAVAILABLE';
+  price_history?: PriceHistoryInsight | null;
 }
 
 export interface PriceMatrix {
