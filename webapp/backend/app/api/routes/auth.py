@@ -100,23 +100,34 @@ def google_auth(payload: GoogleAuthRequest, response: Response, db: Session = De
     if payload.credential:
         try:
             with httpx.Client(timeout=8.0) as client:
+                # 1. Try verifying as a Google ID Token JWT (from Google One-Tap / Sign-In button)
                 verify_res = client.get(
                     "https://oauth2.googleapis.com/tokeninfo",
                     params={"id_token": payload.credential}
                 )
-            if verify_res.status_code != 200:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid Google ID token."
-                )
-            token_data = verify_res.json()
-            if settings.GOOGLE_CLIENT_ID and token_data.get("aud") != settings.GOOGLE_CLIENT_ID:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Google token audience mismatch."
-                )
-            email_clean = (token_data.get("email") or "").lower().strip()
-            display_name = (token_data.get("name") or email_clean.split("@")[0]).strip()
+                if verify_res.status_code == 200:
+                    token_data = verify_res.json()
+                    if settings.GOOGLE_CLIENT_ID and token_data.get("aud") != settings.GOOGLE_CLIENT_ID:
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Google token audience mismatch."
+                        )
+                    email_clean = (token_data.get("email") or "").lower().strip()
+                    display_name = (token_data.get("name") or email_clean.split("@")[0]).strip()
+                else:
+                    # 2. Fallback: Verify as a Google OAuth 2.0 Access Token (from google.accounts.oauth2.initTokenClient popup)
+                    userinfo_res = client.get(
+                        "https://www.googleapis.com/oauth2/v3/userinfo",
+                        headers={"Authorization": f"Bearer {payload.credential}"}
+                    )
+                    if userinfo_res.status_code != 200:
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid Google ID or OAuth access token."
+                        )
+                    u_data = userinfo_res.json()
+                    email_clean = (u_data.get("email") or "").lower().strip()
+                    display_name = (u_data.get("name") or email_clean.split("@")[0]).strip()
         except HTTPException:
             raise
         except Exception as e:
