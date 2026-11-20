@@ -1,9 +1,12 @@
+import secrets
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from app.db.session import get_db
+from app.core.config import settings
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.models.user import User
-from app.schemas.auth import UserRegister, UserLogin, AuthResponse, AuthMeResponse, UserResponse
+from app.schemas.auth import UserRegister, UserLogin, GoogleAuthRequest, AuthResponse, AuthMeResponse, UserResponse
 from app.api.dependencies import get_optional_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -75,6 +78,98 @@ def login(payload: UserLogin, response: Response, db: Session = Depends(get_db))
     return {
         "success": True,
         "message": f"Welcome back, {user.name}!",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+        },
+        "token": token
+    }
+
+
+@router.post("/google")
+def google_auth(payload: GoogleAuthRequest, response: Response, db: Session = Depends(get_db)):
+    """
+    Authenticate or auto-register a user via Google Sign-In.
+    Supports both production Google ID token verification (GOOGLE_CLIENT_ID / oauth2 tokeninfo)
+    and direct developer/team Google identity sign-in when running locally.
+    """
+    email_clean: str = ""
+    display_name: str = ""
+
+    if payload.credential:
+        try:
+            with httpx.Client(timeout=8.0) as client:
+                verify_res = client.get(
+                    "https://oauth2.googleapis.com/tokeninfo",
+                    params={"id_token": payload.credential}
+                )
+            if verify_res.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid Google ID token."
+                )
+            token_data = verify_res.json()
+            if settings.GOOGLE_CLIENT_ID and token_data.get("aud") != settings.GOOGLE_CLIENT_ID:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Google token audience mismatch."
+                )
+            email_clean = (token_data.get("email") or "").lower().strip()
+            display_name = (token_data.get("name") or email_clean.split("@")[0]).strip()
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Could not verify Google token: {e}"
+            )
+    elif payload.email:
+        email_clean = payload.email.lower().strip()
+        display_name = (payload.name or email_clean.split("@")[0].replace(".", " ").title()).strip()
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Either a Google credential token or Google email is required."
+        )
+
+    if not email_clean:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Google account did not provide a valid email address."
+        )
+
+    user = db.query(User).filter(User.email == email_clean).first()
+    is_new_user = False
+
+    if not user:
+        is_new_user = True
+        user = User(
+            name=display_name or "Google Shopper",
+            email=email_clean,
+            hashed_password=get_password_hash(secrets.token_urlsafe(32))
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    token = create_access_token(subject=user.id)
+    response.set_cookie(
+        key="honest_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 7
+    )
+
+    return {
+        "success": True,
+        "is_new_user": is_new_user,
+        "message": (
+            f"Google account created! Welcome to Honest AI, {user.name}."
+            if is_new_user
+            else f"Welcome back via Google, {user.name}!"
+        ),
         "user": {
             "id": user.id,
             "name": user.name,

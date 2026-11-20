@@ -150,6 +150,26 @@ export const api = {
     return data;
   },
 
+  async googleAuth(payload: { credential?: string; email?: string; name?: string }): Promise<{
+    success: boolean;
+    is_new_user?: boolean;
+    message: string;
+    user?: User;
+    token?: string;
+    detail?: string;
+  }> {
+    const res = await fetch(`${API_BASE}/api/auth/google`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('honest_jwt_token', data.token);
+    }
+    return data;
+  },
+
   async logout(): Promise<void> {
     try {
       await fetch(`${API_BASE}/api/auth/logout`, {

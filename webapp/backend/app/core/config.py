@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev_secret_key_honest_ai_shopping_platform_super_secure_2026"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    GOOGLE_CLIENT_ID: str = ""
 
     # CORS
     CORS_ORIGINS: Union[str, List[str]] = [

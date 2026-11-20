@@ -56,3 +56,27 @@ def test_logout(client):
     res = client.post("/api/auth/logout")
     assert res.status_code == 200
     assert res.json()["success"] is True
+
+
+def test_google_signup_and_signin_flow(client):
+    # 1. First-time Google Sign-Up auto-creates the account
+    google_payload = {
+        "email": "nour.elmasry@gmail.com",
+        "name": "Nour El-Masry"
+    }
+    res1 = client.post("/api/auth/google", json=google_payload)
+    assert res1.status_code == 200
+    data1 = res1.json()
+    assert data1["success"] is True
+    assert data1["is_new_user"] is True
+    assert data1["user"]["email"] == "nour.elmasry@gmail.com"
+    assert data1["user"]["name"] == "Nour El-Masry"
+    assert "token" in data1
+
+    # 2. Subsequent Google Sign-In logs in the existing user without duplicating
+    res2 = client.post("/api/auth/google", json=google_payload)
+    assert res2.status_code == 200
+    data2 = res2.json()
+    assert data2["success"] is True
+    assert data2["is_new_user"] is False
+    assert data2["user"]["id"] == data1["user"]["id"]
