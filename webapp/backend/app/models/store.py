@@ -1,12 +1,15 @@
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import Integer, String, SmallInteger, Numeric, Text, DateTime
+from sqlalchemy import Integer, String, SmallInteger, Numeric, Text, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
 class StoreReputation(Base):
     __tablename__ = "stores_reputation"
+    __table_args__ = (
+        Index("ix_stores_trust_platform", "trust_score", "platform"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     store_name: Mapped[str] = mapped_column(String(255), nullable=False)

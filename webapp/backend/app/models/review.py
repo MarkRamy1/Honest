@@ -1,12 +1,15 @@
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import Integer, String, SmallInteger, Numeric, Text, Boolean, ForeignKey, DateTime
+from sqlalchemy import Integer, String, SmallInteger, Numeric, Text, Boolean, ForeignKey, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
 class Review(Base):
     __tablename__ = "reviews"
+    __table_args__ = (
+        Index("ix_reviews_product_tier_created", "product_name", "tier", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)

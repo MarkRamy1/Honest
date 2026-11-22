@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.models.review import Review
 from app.models.user import User
 from app.schemas.review import ReviewCreate
-from app.api.dependencies import get_optional_user
+from app.api.dependencies import get_optional_user, get_current_user
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
@@ -145,3 +145,33 @@ def upvote_review(review_id: int, db: Session = Depends(get_db)):
         "success": True,
         "upvotes": review.upvotes
     }
+
+
+@router.delete("/{review_id}")
+def delete_review(
+    review_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a community review, strictly enforcing row-level user ownership."""
+    review = db.query(Review).filter(Review.id == review_id).first()
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Review not found."
+        )
+
+    if review.user_id is None or review.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own reviews."
+        )
+
+    db.delete(review)
+    db.commit()
+
+    return {
+        "success": True,
+        "deleted_id": review_id
+    }
+

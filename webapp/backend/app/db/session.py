@@ -6,6 +6,14 @@ from app.core.logging import logger
 
 database_url = settings.DATABASE_URL
 
+POSTGRES_POOL_CONFIG = {
+    "pool_pre_ping": True,
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_recycle": 1800,
+}
+
+
 def create_app_engine():
     target_url = settings.DATABASE_URL
     if target_url.startswith("sqlite"):
@@ -22,7 +30,8 @@ def create_app_engine():
             target_url,
             connect_args={"connect_timeout": 2},
             echo=False,
-            future=True
+            future=True,
+            **POSTGRES_POOL_CONFIG
         )
         with eng.connect() as conn:
             pass

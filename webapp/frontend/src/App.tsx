@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { PreferencesProvider, usePreferences } from './preferences';
 import { Shell } from './components/Shell';
 import { AccountDialog } from './components/AccountDialog';
 import { Dashboard } from './pages/Dashboard';
-import { Analysis } from './pages/Analysis';
-import { Assistant } from './pages/Assistant';
-import { Saved } from './pages/Saved';
-import { Community } from './pages/Community';
-import { Settings } from './pages/Settings';
-import { PreviewPage } from './pages/PreviewPage';
 import { api } from './services/api';
 import type { Page, Product, AnalysisRecord, ChatThread, ChatMessage, User } from './types';
+
+// Lazy-loaded route chunks (vercel-react-best-practices: bundle-dynamic-imports)
+const Analysis = lazy(() => import('./pages/Analysis').then((m) => ({ default: m.Analysis })));
+const Assistant = lazy(() => import('./pages/Assistant').then((m) => ({ default: m.Assistant })));
+const Saved = lazy(() => import('./pages/Saved').then((m) => ({ default: m.Saved })));
+const Community = lazy(() => import('./pages/Community').then((m) => ({ default: m.Community })));
+const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
+const PreviewPage = lazy(() => import('./pages/PreviewPage').then((m) => ({ default: m.PreviewPage })));
 
 function MainApp() {
   const { language } = usePreferences();
@@ -181,24 +183,25 @@ function MainApp() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Check health and user on mount
+  // Check health and user on mount in parallel (vercel-react-best-practices: async-parallel)
   useEffect(() => {
-    api.checkHealth()
-      .then((res) => {
-        setIsOnline(res.status === 'online');
-      })
-      .catch(() => {
+    let isMounted = true;
+    Promise.allSettled([api.checkHealth(), api.getMe()]).then(([healthRes, meRes]) => {
+      if (!isMounted) return;
+      if (healthRes.status === 'fulfilled') {
+        setIsOnline(healthRes.value.status === 'online');
+      } else {
         setIsOnline(false);
-      });
+      }
 
-    api.getMe()
-      .then((res) => {
-        if (res.authenticated && res.user) {
-          setUser(res.user);
-          localStorage.setItem('honest_auth_user', JSON.stringify(res.user));
-        }
-      })
-      .catch(() => {});
+      if (meRes.status === 'fulfilled' && meRes.value.authenticated && meRes.value.user) {
+        setUser(meRes.value.user);
+        localStorage.setItem('honest_auth_user', JSON.stringify(meRes.value.user));
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const navigate = (nextPage: Page) => {
@@ -390,105 +393,115 @@ function MainApp() {
       setToast={setToast}
       onOpenAccount={() => setAccountOpen(true)}
     >
-      {/* Route Views */}
-      {page === 'dashboard' && (
-        <Dashboard
-          onSelectProduct={handleSelectProduct}
-          onNavigate={navigate}
-          saved={saved}
-          onToggleSave={handleToggleSave}
-          history={history}
-          onSelectRecord={handleSelectRecord}
-        />
-      )}
+      {/* Route Views with Code-Splitting Suspense Boundary */}
+      <Suspense
+        fallback={
+          <div className="page-loading-skeleton" role="status" aria-live="polite">
+            <span className="mono-metric">
+              {language === 'ar' ? 'جارٍ تحميل وحدة الفحص الجنائي…' : 'Loading forensic intelligence module…'}
+            </span>
+          </div>
+        }
+      >
+        {page === 'dashboard' && (
+          <Dashboard
+            onSelectProduct={handleSelectProduct}
+            onNavigate={navigate}
+            saved={saved}
+            onToggleSave={handleToggleSave}
+            history={history}
+            onSelectRecord={handleSelectRecord}
+          />
+        )}
 
-      {page === 'analysis' && (
-        <Analysis
-          initialProduct={analysisProduct}
-          record={record}
-          onRecordChange={handleRecordChange}
-          saved={saved}
-          onToggleSave={handleToggleSave}
-          onAskQuestion={handleAskQuestionFromReport}
-          setToast={setToast}
-          activeSubTab="overview"
-        />
-      )}
+        {page === 'analysis' && (
+          <Analysis
+            initialProduct={analysisProduct}
+            record={record}
+            onRecordChange={handleRecordChange}
+            saved={saved}
+            onToggleSave={handleToggleSave}
+            onAskQuestion={handleAskQuestionFromReport}
+            setToast={setToast}
+            activeSubTab="overview"
+          />
+        )}
 
-      {page === 'studio' && (
-        <Analysis
-          initialProduct={analysisProduct}
-          record={record}
-          onRecordChange={handleRecordChange}
-          saved={saved}
-          onToggleSave={handleToggleSave}
-          onAskQuestion={handleAskQuestionFromReport}
-          setToast={setToast}
-          activeSubTab="reality"
-        />
-      )}
+        {page === 'studio' && (
+          <Analysis
+            initialProduct={analysisProduct}
+            record={record}
+            onRecordChange={handleRecordChange}
+            saved={saved}
+            onToggleSave={handleToggleSave}
+            onAskQuestion={handleAskQuestionFromReport}
+            setToast={setToast}
+            activeSubTab="reality"
+          />
+        )}
 
-      {page === 'compare' && (
-        <Analysis
-          initialProduct={analysisProduct}
-          record={record}
-          onRecordChange={handleRecordChange}
-          saved={saved}
-          onToggleSave={handleToggleSave}
-          onAskQuestion={handleAskQuestionFromReport}
-          setToast={setToast}
-          activeSubTab="compare"
-        />
-      )}
+        {page === 'compare' && (
+          <Analysis
+            initialProduct={analysisProduct}
+            record={record}
+            onRecordChange={handleRecordChange}
+            saved={saved}
+            onToggleSave={handleToggleSave}
+            onAskQuestion={handleAskQuestionFromReport}
+            setToast={setToast}
+            activeSubTab="compare"
+          />
+        )}
 
-      {page === 'assistant' && (
-        <Assistant
-          threads={threads}
-          activeThreadId={activeThreadId}
-          onSelectThread={setActiveThreadId}
-          onNewThread={handleNewThread}
-          onDeleteThread={handleDeleteThread}
-          onSendMessage={handleSendMessage}
-          isLoading={isChatLoading}
-          productContext={analysisProduct}
-          setToast={setToast}
-          initialPrompt={chatPrompt}
-          onClearPrompt={() => setChatPrompt('')}
-        />
-      )}
+        {page === 'assistant' && (
+          <Assistant
+            threads={threads}
+            activeThreadId={activeThreadId}
+            onSelectThread={setActiveThreadId}
+            onNewThread={handleNewThread}
+            onDeleteThread={handleDeleteThread}
+            onSendMessage={handleSendMessage}
+            isLoading={isChatLoading}
+            productContext={analysisProduct}
+            setToast={setToast}
+            initialPrompt={chatPrompt}
+            onClearPrompt={() => setChatPrompt('')}
+          />
+        )}
 
-      {page === 'saved' && (
-        <Saved
-          saved={saved}
-          onToggleSave={handleToggleSave}
-          onSelectProduct={handleSelectProduct}
-          onNavigateToDashboard={() => navigate('dashboard')}
-        />
-      )}
+        {page === 'saved' && (
+          <Saved
+            saved={saved}
+            onToggleSave={handleToggleSave}
+            onSelectProduct={handleSelectProduct}
+            onNavigateToDashboard={() => navigate('dashboard')}
+          />
+        )}
 
-      {page === 'reviews' && (
-        <Community
-          user={user}
-          defaultProductName={analysisProduct?.name}
-          setToast={setToast}
-        />
-      )}
+        {page === 'reviews' && (
+          <Community
+            user={user}
+            defaultProductName={analysisProduct?.name}
+            setToast={setToast}
+          />
+        )}
 
-      {(page === 'settings' || page === 'extension') && (
-        <Settings
-          user={user}
-          onOpenAccount={() => setAccountOpen(true)}
-          onClearAllData={handleClearAllData}
-          setToast={setToast}
-        />
-      )}
+        {(page === 'settings' || page === 'extension') && (
+          <Settings
+            user={user}
+            onOpenAccount={() => setAccountOpen(true)}
+            onClearAllData={handleClearAllData}
+            setToast={setToast}
+          />
+        )}
 
-      {page === 'preview' && (
-        <PreviewPage
-          onBackToChat={() => navigate('dashboard')}
-          currentLang={language}
-        />
-      )}
+        {page === 'preview' && (
+          <PreviewPage
+            onBackToChat={() => navigate('dashboard')}
+            currentLang={language}
+          />
+        )}
+      </Suspense>
 
       {accountOpen && (
         <AccountDialog

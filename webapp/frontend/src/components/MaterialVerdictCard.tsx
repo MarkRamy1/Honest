@@ -6,7 +6,7 @@ interface MaterialVerdictCardProps {
   currentLang: 'en' | 'ar';
 }
 
-export const MaterialVerdictCard: React.FC<MaterialVerdictCardProps> = ({ verdict, currentLang }) => {
+export const MaterialVerdictCard: React.FC<MaterialVerdictCardProps> = React.memo(({ verdict, currentLang }) => {
   const isAr = currentLang === 'ar';
 
   return (
@@ -51,4 +51,4 @@ export const MaterialVerdictCard: React.FC<MaterialVerdictCardProps> = ({ verdic
       )}
     </div>
   );
-};
+});

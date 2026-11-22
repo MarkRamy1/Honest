@@ -7,7 +7,7 @@ interface PricingMatrixCardProps {
   currentLang: 'en' | 'ar';
 }
 
-export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
+export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = React.memo(({
   matrix,
   isRecommendation,
   currentLang
@@ -109,6 +109,7 @@ export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
 
         {/* Stepped SVG Sparkline with High/Low Watermarks */}
         <svg
+          className="price-history-svg"
           viewBox={`0 0 ${width} ${height}`}
           style={{ width: '100%', height: 64, display: 'block', overflow: 'visible' }}
           role="img"
@@ -483,4 +484,4 @@ export const PricingMatrixCard: React.FC<PricingMatrixCardProps> = ({
       </div>
     </div>
   );
-};
+});

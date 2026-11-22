@@ -24,7 +24,8 @@ export function Dashboard({
   history,
   onSelectRecord
 }: Readonly<DashboardProps>) {
-  const { t } = usePreferences();
+  const { t, language } = usePreferences();
+  const isAr = language === 'ar';
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All products');
   const [search, setSearch] = useState('');
@@ -107,6 +108,25 @@ export function Dashboard({
               {t(s.label)}
             </button>
           ))}
+        </div>
+
+        {/* Signature Forensic Telemetry Strip (frontend-design: non-templated focal point) */}
+        <div className="forensic-telemetry-strip" aria-label={isAr ? 'مؤشرات الفحص الجنائي' : 'Forensic telemetry indicators'}>
+          <div className="forensic-telemetry-item">
+            <span className="telemetry-code">01 / PRICE_PULSE</span>
+            <strong>{isAr ? 'مخطط الأسعار لـ 90 يوماً' : '90-Day Stepped Price Ledger'}</strong>
+            <span className="telemetry-metric positive">↓ 14.2% {isAr ? 'كشف الخصم الوهمي' : 'Fake-MSRP Detection'}</span>
+          </div>
+          <div className="forensic-telemetry-item">
+            <span className="telemetry-code">02 / MATERIAL_VLM</span>
+            <strong>{isAr ? 'مصفوفة الحقيقة (3 مستويات)' : '3-Tier Material Truth Matrix'}</strong>
+            <span className="telemetry-metric">{isAr ? 'أصلي · هاي كوبي · بديل اقتصادي' : 'Original · High-Copy · Budget Dupe'}</span>
+          </div>
+          <div className="forensic-telemetry-item">
+            <span className="telemetry-code">03 / MENA_LOGISTICS</span>
+            <strong>{isAr ? 'توافق متاجر مصر والشرق الأوسط' : 'Egypt & MENA Store Telemetry'}</strong>
+            <span className="telemetry-metric">{isAr ? 'دفع عند الاستلام · تقسيط 0% · شحن سريع' : 'COD · 0% Installments · 1–3d Express'}</span>
+          </div>
         </div>
       </section>
 
