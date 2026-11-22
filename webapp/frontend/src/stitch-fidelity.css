@@ -860,6 +860,33 @@ input:focus, textarea:focus, select:focus {
   outline-offset: 1px;
 }
 
+.input-icon,
+.catalog-search {
+  background: var(--stitch-surface-low) !important;
+  border-color: var(--stitch-border-line) !important;
+  color: var(--stitch-text-muted);
+}
+
+.input-icon input,
+.catalog-search input {
+  background: transparent !important;
+  color: var(--stitch-text-primary) !important;
+}
+
+.notice,
+.score-overview,
+.verdict-copy,
+.findings > div {
+  background: var(--stitch-surface-low) !important;
+  color: var(--stitch-text-body) !important;
+  border: 1px solid var(--stitch-border);
+}
+
+.verdict-panel {
+  background: var(--stitch-surface-card) !important;
+  border: 1px solid var(--stitch-border) !important;
+}
+
 /* 10. Chat & Assistant */
 .chat-page {
   max-width: 1100px;

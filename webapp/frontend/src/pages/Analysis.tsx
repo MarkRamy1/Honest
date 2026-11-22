@@ -52,6 +52,12 @@ export function Analysis({
   }, [activeSubTab]);
 
   useEffect(() => {
+    if (tab === 'compare' && record && !priceMatrix && !loadingCompare) {
+      handleFetchComparison();
+    }
+  }, [tab, record]);
+
+  useEffect(() => {
     if (initialProduct?.name && (!record || record.product.name !== initialProduct.name)) {
       setName(initialProduct.name);
       setImage(initialProduct.image || '');
