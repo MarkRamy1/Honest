@@ -214,7 +214,16 @@ export function AccountDialog({ user, onUserChange, setToast, onClose }: Readonl
               )}
               <div className="field">
                 <label htmlFor="account-email">{t('Email address')}</label>
-                <input id="account-email" name="email" type="email" autoComplete="email" required maxLength={255} />
+                <input
+                  id="account-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  required
+                  maxLength={255}
+                />
               </div>
               <div className="field">
                 <label htmlFor="account-password">{t('Password')}</label>
@@ -228,7 +237,7 @@ export function AccountDialog({ user, onUserChange, setToast, onClose }: Readonl
                 />
               </div>
               {error && <Feedback message={error} />}
-              <button className="button primary full-width" disabled={busy}>
+              <button className="button primary full-width" type="submit" disabled={busy}>
                 {busy ? t('Please wait…') : register ? t('Create account') : t('Sign in')}
                 <Icon name="arrow" size={17} />
               </button>

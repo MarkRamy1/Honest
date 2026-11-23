@@ -4,6 +4,7 @@ import type { Page, Product, AnalysisRecord } from '../types';
 import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
 import { Feedback } from '../components/Feedback';
+import { SkeletonGrid } from '../components/SkeletonGrid';
 import { api } from '../services/api';
 import { categories, featuredProducts, features, popularScans } from '../data/mockData';
 
@@ -188,11 +189,7 @@ export function Dashboard({
           </div>
 
           {loadingCatalog ? (
-            <div className="product-grid">
-              {[1, 2, 3, 4].map((n) => (
-                <div className="skeleton-card" key={n} aria-label={t('Loading product')} />
-              ))}
-            </div>
+            <SkeletonGrid variant="product" count={4} />
           ) : catalogError ? (
             <Feedback message={catalogError} onRetry={() => setSearch(search)} />
           ) : catalogProducts.length ? (

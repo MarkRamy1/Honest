@@ -7,6 +7,20 @@
  */
 
 const AGENT_BASE_URL = 'http://localhost:8000';
+const SW_CACHE_TTL_MS = 60000;
+const swCache = new Map();
+
+function getSwCache(key) {
+  const entry = swCache.get(key);
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.value;
+  }
+  return null;
+}
+
+function setSwCache(key, value, ttl = SW_CACHE_TTL_MS) {
+  swCache.set(key, { value, expiresAt: Date.now() + ttl });
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'CHECK_AGENT_HEALTH') {
@@ -106,6 +120,10 @@ async function checkAgentHealth() {
 }
 
 async function searchSocialAgent(payload) {
+  const cacheKey = `social:${JSON.stringify(payload || {})}`;
+  const cached = getSwCache(cacheKey);
+  if (cached) return cached;
+
   const response = await fetch(`${AGENT_BASE_URL}/api/agent/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -115,7 +133,9 @@ async function searchSocialAgent(payload) {
   if (!response.ok) {
     throw new Error(`Agent search failed with status ${response.status}`);
   }
-  return await response.json();
+  const data = await response.json();
+  setSwCache(cacheKey, data);
+  return data;
 }
 
 async function runVisualAudit(payload) {

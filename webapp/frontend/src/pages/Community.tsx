@@ -4,6 +4,7 @@ import type { CommunityReview, User } from '../types';
 import { api } from '../services/api';
 import { Icon } from '../components/Icon';
 import { Feedback } from '../components/Feedback';
+import { SkeletonGrid } from '../components/SkeletonGrid';
 
 export interface CommunityProps {
   readonly user: User | null;
@@ -185,7 +186,7 @@ export function Community({ user, defaultProductName, setToast }: Readonly<Commu
 
           {publishError && <Feedback message={publishError} />}
 
-          <button className="button primary" disabled={busyPublishing}>
+          <button className="button primary" type="submit" disabled={busyPublishing}>
             {busyPublishing ? t('Publishing…') : t('Publish review')}
           </button>
         </form>
@@ -213,7 +214,7 @@ export function Community({ user, defaultProductName, setToast }: Readonly<Commu
       </form>
 
       {loading ? (
-        <Feedback loading message={t('Loading community reviews…')} />
+        <SkeletonGrid variant="review" count={4} />
       ) : error ? (
         <Feedback message={error} onRetry={loadReviews} />
       ) : (

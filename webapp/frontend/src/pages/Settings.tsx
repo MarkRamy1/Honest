@@ -64,7 +64,7 @@ export function Settings({
             <span className="pill">Manifest V3 Extension</span>
             <a
               className="button secondary"
-              href="http://127.0.0.1:8000/extension/download"
+              href="/api/extension/download"
               download="honest4-extension.zip"
             >
               {t('Download extension')}

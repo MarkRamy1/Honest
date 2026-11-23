@@ -9,6 +9,7 @@ class Review(Base):
     __tablename__ = "reviews"
     __table_args__ = (
         Index("ix_reviews_product_tier_created", "product_name", "tier", "created_at"),
+        Index("ix_reviews_created_at_id", "created_at", "id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

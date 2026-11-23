@@ -41,6 +41,9 @@ export function Shell({
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        {t('Skip to main content')}
+      </a>
       {mobileMenuOpen && (
         <button
           className="sidebar-backdrop"
@@ -55,7 +58,7 @@ export function Shell({
           <span className="brand-symbol">
             <Icon name="shield" size={27} />
           </span>
-          <span className="brand-copy">
+          <span className="brand-copy" translate="no">
             {t('Honest AI')}
             <small>{t('v4.0 Assistant')}</small>
           </span>
@@ -134,7 +137,7 @@ export function Shell({
 
           <div className="engine-version">
             <span>{t('Honest Engine Core')}</span>
-            <span>{t('v4.0.2')}</span>
+            <span translate="no">{t('v4.0.2')}</span>
           </div>
         </div>
       </aside>
@@ -221,7 +224,7 @@ export function Shell({
       </div>
 
       {toast && (
-        <div className="toast" role="status">
+        <div className="toast" role="status" aria-live="polite">
           <Icon name="success" size={20} />
           {toast}
         </div>

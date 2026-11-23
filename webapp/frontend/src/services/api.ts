@@ -2,6 +2,44 @@ import { CommunityReview, ReviewStats, StoreReputation, User } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
+// Tier-S Lightweight Client Cache (speed-engineer: 60s staleTime + in-flight deduplication, no Redis)
+const CLIENT_CACHE_TTL_MS = 60_000;
+const responseCache = new Map<string, { data: any; expiresAt: number }>();
+const inFlightRequests = new Map<string, Promise<any>>();
+
+async function cachedGetJson<T = any>(cacheKey: string, url: string, ttlMs = CLIENT_CACHE_TTL_MS): Promise<T> {
+  const now = Date.now();
+  const cached = responseCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.data as T;
+  }
+  const existingFlight = inFlightRequests.get(cacheKey);
+  if (existingFlight) {
+    return existingFlight as Promise<T>;
+  }
+  const reqPromise = fetch(url)
+    .then((res) => res.json())
+    .then((data) => {
+      responseCache.set(cacheKey, { data, expiresAt: Date.now() + ttlMs });
+      inFlightRequests.delete(cacheKey);
+      return data as T;
+    })
+    .catch((err) => {
+      inFlightRequests.delete(cacheKey);
+      throw err;
+    });
+  inFlightRequests.set(cacheKey, reqPromise);
+  return reqPromise;
+}
+
+export function invalidateApiCache(prefix: string): void {
+  for (const key of Array.from(responseCache.keys())) {
+    if (key.startsWith(prefix)) {
+      responseCache.delete(key);
+    }
+  }
+}
+
 function getHeaders(extraHeaders: Record<string, string> = {}): HeadersInit {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -81,8 +119,8 @@ export const api = {
     if (params?.brand) query.set('brand', params.brand);
     if (params?.page) query.set('page', String(params.page));
 
-    const res = await fetch(`${API_BASE}/api/reviews?${query.toString()}`);
-    return res.json();
+    const qs = query.toString();
+    return cachedGetJson(`reviews:${qs}`, `${API_BASE}/api/reviews?${qs}`, 30_000);
   },
 
   async submitReview(review: {
@@ -101,7 +139,9 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(review)
     });
-    return res.json();
+    const data = await res.json();
+    invalidateApiCache('reviews:');
+    return data;
   },
 
   async upvoteReview(id: number) {
@@ -109,18 +149,19 @@ export const api = {
       method: 'POST',
       headers: getHeaders()
     });
-    return res.json();
+    const data = await res.json();
+    invalidateApiCache('reviews:');
+    return data;
   },
 
   // Catalog
   async searchCatalog(q: string = '') {
-    const res = await fetch(`${API_BASE}/api/catalog/search?q=${encodeURIComponent(q)}`);
-    return res.json();
+    const encoded = encodeURIComponent(q);
+    return cachedGetJson(`catalog:search:${encoded}`, `${API_BASE}/api/catalog/search?q=${encoded}`, 60_000);
   },
 
   async getStores(): Promise<{ success: boolean; stores: StoreReputation[] }> {
-    const res = await fetch(`${API_BASE}/api/catalog/stores`);
-    return res.json();
+    return cachedGetJson('catalog:stores', `${API_BASE}/api/catalog/stores`, 60_000);
   },
 
   // Auth

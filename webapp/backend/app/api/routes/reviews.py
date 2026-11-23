@@ -1,6 +1,6 @@
 from math import ceil
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
 @router.get("")
 def get_reviews(
+    response: Response,
     product: Optional[str] = Query(None, description="Filter by product name"),
     tier: Optional[str] = Query(None, description="Filter by tier"),
     brand: Optional[str] = Query(None, description="Filter by brand"),
@@ -22,6 +23,7 @@ def get_reviews(
     db: Session = Depends(get_db)
 ):
     """Retrieve paginated community reviews and aggregate material inspection stats."""
+    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
     query = db.query(Review)
 
     if product and product.strip():
@@ -34,12 +36,22 @@ def get_reviews(
     total = query.count()
     last_page = max(1, ceil(total / per_page))
     offset = (page - 1) * per_page
-    reviews = query.order_by(Review.created_at.desc()).offset(offset).limit(per_page).all()
+    reviews = (
+        query.order_by(Review.created_at.desc(), Review.id.desc())
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
 
-    # Aggregate statistics
-    total_reviews_count = db.query(func.count(Review.id)).scalar() or 0
-    avg_rating = db.query(func.avg(Review.rating)).scalar() or 5.0
-    avg_accuracy = db.query(func.avg(Review.material_accuracy_rating)).scalar() or 4.8
+    # Single combined aggregate query (speed-engineer: reduce 3 DB round-trips to 1)
+    stats_row = db.query(
+        func.count(Review.id),
+        func.avg(Review.rating),
+        func.avg(Review.material_accuracy_rating),
+    ).one()
+    total_reviews_count = stats_row[0] or 0
+    avg_rating = stats_row[1] if stats_row[1] is not None else 5.0
+    avg_accuracy = stats_row[2] if stats_row[2] is not None else 4.8
 
     items = []
     for r in reviews:

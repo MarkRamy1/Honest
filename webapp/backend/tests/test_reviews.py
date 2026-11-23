@@ -1,6 +1,7 @@
 def test_reviews_listing_and_stats(client):
     res = client.get("/api/reviews")
     assert res.status_code == 200
+    assert "max-age=" in res.headers.get("Cache-Control", "")
     data = res.json()
     assert data["success"] is True
     assert len(data["reviews"]) >= 1
@@ -43,6 +44,7 @@ def test_supabase_composite_indexes_and_pooling_config():
     store_index_names = {idx.name for idx in stores_table.indexes}
 
     assert "ix_reviews_product_tier_created" in review_index_names
+    assert "ix_reviews_created_at_id" in review_index_names
     assert "ix_stores_trust_platform" in store_index_names
     assert getattr(db_session, "POSTGRES_POOL_CONFIG", {}).get("pool_pre_ping") is True
 

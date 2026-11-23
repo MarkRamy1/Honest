@@ -59,6 +59,10 @@ export function PreferencesProvider({ children }: Readonly<PreferencesProviderPr
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(theme);
     document.documentElement.style.colorScheme = theme;
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute('content', theme === 'dark' ? '#0a0e17' : '#f8faf9');
+    }
     write('honest_theme', theme);
     write('honest:theme', theme);
   }, [theme]);

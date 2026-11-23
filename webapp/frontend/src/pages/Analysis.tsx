@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { Feedback } from '../components/Feedback';
 import { PricingMatrixCard } from '../components/PricingMatrixCard';
 import { MaterialVerdictCard } from '../components/MaterialVerdictCard';
+import { SkeletonGrid } from '../components/SkeletonGrid';
 
 export interface AnalysisProps {
   readonly initialProduct: Product | null;
@@ -271,6 +272,10 @@ export function Analysis({
           </label>
           <input
             id="product-image"
+            name="product_image"
+            type="url"
+            spellCheck={false}
+            autoComplete="off"
             value={image}
             onChange={(e) => setImage(e.target.value)}
             placeholder="https://store.com/product.jpg"
@@ -278,7 +283,7 @@ export function Analysis({
           />
         </div>
 
-        <button className="button primary" disabled={busy || !name.trim()}>
+        <button className="button primary" type="submit" disabled={busy || !name.trim()}>
           <Icon name={busy ? 'loading' : 'scan'} className={busy ? 'spin' : ''} size={18} />
           {busy ? t('Analyzing…') : t('Analyze product')}
         </button>
@@ -368,6 +373,10 @@ export function Analysis({
                         <img
                           src={record.product.image}
                           alt={record.product.name}
+                          width={480}
+                          height={400}
+                          fetchPriority="high"
+                          decoding="async"
                           onError={(e) => {
                             e.currentTarget.hidden = true;
                           }}
@@ -555,6 +564,8 @@ export function Analysis({
 
                 {priceMatrix ? (
                   <PricingMatrixCard matrix={priceMatrix} currentLang={language} />
+                ) : loadingCompare ? (
+                  <SkeletonGrid variant="matrix" count={3} />
                 ) : (
                   <div className="empty-state">
                     <Icon name="scale" size={35} />

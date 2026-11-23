@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { PreferencesProvider, usePreferences } from './preferences';
 import { Shell } from './components/Shell';
 import { AccountDialog } from './components/AccountDialog';
@@ -204,37 +204,46 @@ function MainApp() {
     };
   }, []);
 
-  const navigate = (nextPage: Page) => {
+  const navigate = useCallback((nextPage: Page) => {
     window.location.hash = nextPage;
-    setPage(nextPage);
-  };
-
-  const handleToggleSave = (product: Product) => {
-    const exists = saved.some((p) => p.name === product.name);
-    if (exists) {
-      setSaved((prev) => prev.filter((p) => p.name !== product.name));
-      setToast('Product removed from your shortlist.');
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => void };
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (doc.startViewTransition && !prefersReducedMotion) {
+      doc.startViewTransition(() => setPage(nextPage));
     } else {
-      setSaved((prev) => [product, ...prev]);
-      setToast('Product saved to your shortlist.');
+      setPage(nextPage);
     }
-  };
+  }, []);
 
-  const handleSelectProduct = (product: Product) => {
+  const handleToggleSave = useCallback((product: Product) => {
+    setSaved((prev) => {
+      const exists = prev.some((p) => p.name === product.name);
+      if (exists) {
+        setToast('Product removed from your shortlist.');
+        return prev.filter((p) => p.name !== product.name);
+      }
+      setToast('Product saved to your shortlist.');
+      return [product, ...prev];
+    });
+  }, []);
+
+  const handleSelectProduct = useCallback((product: Product) => {
     setAnalysisProduct(product);
     navigate('analysis');
-  };
+  }, [navigate]);
 
-  const handleSelectRecord = (rec: AnalysisRecord) => {
+  const handleSelectRecord = useCallback((rec: AnalysisRecord) => {
     setRecord(rec);
     setAnalysisProduct(rec.product);
     navigate('analysis');
-  };
+  }, [navigate]);
 
-  const handleRecordChange = (rec: AnalysisRecord) => {
+  const handleRecordChange = useCallback((rec: AnalysisRecord) => {
     setRecord(rec);
     setHistory((prev) => [rec, ...prev.filter((h) => h.product.name !== rec.product.name)].slice(0, 50));
-  };
+  }, []);
 
   // Assistant actions
   const handleNewThread = () => {

@@ -38,7 +38,10 @@ export function ProductCard({ product, saved, onSave, onSelect }: Readonly<Produ
             <img
               src={image}
               alt={product.name}
+              width={400}
+              height={300}
               loading="lazy"
+              decoding="async"
               onError={(e) => {
                 e.currentTarget.hidden = true;
               }}

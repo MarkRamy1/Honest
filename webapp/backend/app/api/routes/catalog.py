@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.product import VerifiedProduct
@@ -9,10 +9,13 @@ router = APIRouter(prefix="/catalog", tags=["Catalog"])
 
 @router.get("/search")
 def search_catalog(
+    response: Response,
     q: str = Query("", description="Search term for products"),
+    limit: int = Query(15, ge=1, le=50, description="Max products per page"),
     db: Session = Depends(get_db)
 ):
     """Search verified products catalog with MSRPs, replica prices, and genuine materials."""
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
     query = db.query(VerifiedProduct)
 
     if q.strip():
@@ -23,7 +26,7 @@ def search_catalog(
             (VerifiedProduct.category.ilike(term))
         )
 
-    products = query.limit(15).all()
+    products = query.order_by(VerifiedProduct.id.asc()).limit(limit).all()
 
     items = []
     for p in products:
@@ -49,9 +52,19 @@ def search_catalog(
 
 
 @router.get("/stores")
-def get_stores(db: Session = Depends(get_db)):
-    """Retrieve verified stores ordered by trust score."""
-    stores = db.query(StoreReputation).order_by(StoreReputation.trust_score.desc()).all()
+def get_stores(
+    response: Response,
+    limit: int = Query(20, ge=1, le=100, description="Max stores per page"),
+    db: Session = Depends(get_db)
+):
+    """Retrieve verified stores ordered by trust score with bounded limit and stable tie-breaker."""
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
+    stores = (
+        db.query(StoreReputation)
+        .order_by(StoreReputation.trust_score.desc(), StoreReputation.id.asc())
+        .limit(limit)
+        .all()
+    )
 
     items = []
     for s in stores:
