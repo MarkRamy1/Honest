@@ -14,8 +14,17 @@ POSTGRES_POOL_CONFIG = {
 }
 
 
+def _normalize_db_url(raw_url: str) -> str:
+    """Normalize Supabase/Render postgres:// or postgresql:// URLs for SQLAlchemy psycopg v3."""
+    if raw_url.startswith("postgres://"):
+        return raw_url.replace("postgres://", "postgresql+psycopg://", 1)
+    if raw_url.startswith("postgresql://") and "+psycopg" not in raw_url:
+        return raw_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return raw_url
+
+
 def create_app_engine():
-    target_url = settings.DATABASE_URL
+    target_url = _normalize_db_url(settings.DATABASE_URL)
     if target_url.startswith("sqlite"):
         return create_engine(
             target_url,

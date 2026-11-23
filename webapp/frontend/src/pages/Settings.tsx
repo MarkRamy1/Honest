@@ -64,7 +64,7 @@ export function Settings({
             <span className="pill">Manifest V3 Extension</span>
             <a
               className="button secondary"
-              href="/api/extension/download"
+              href={`${import.meta.env.VITE_API_BASE_URL || ''}/api/extension/download`}
               download="honest4-extension.zip"
             >
               {t('Download extension')}

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: honest-ai-backend
+    runtime: docker
+    plan: free
+    rootDir: webapp/backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: AI_PROVIDER
+        value: gemini
+      - key: CORS_ORIGINS
+        value: "https://markramy1.github.io,http://localhost:5173"
+      - key: GOOGLE_CLIENT_ID
+        value: "961289606983-08579ckg98ts6q6gfofi5l1mppse3bn2.apps.googleusercontent.com"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # Paste your Supabase Transaction Pooler / Session Pooler Postgres URI here
+      - key: GEMINI_API_KEY
+        sync: false # Optional: Paste your Gemini API key here
