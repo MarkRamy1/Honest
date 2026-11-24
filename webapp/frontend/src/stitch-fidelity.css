@@ -856,6 +856,55 @@ input, textarea, select {
   transition: border-color 0.15s ease;
 }
 
+select,
+select option,
+.composer-options select,
+.composer-options select option {
+  background-color: var(--stitch-surface-low) !important;
+  color: var(--stitch-text-primary) !important;
+  border: 1px solid var(--stitch-border-line) !important;
+}
+
+.mode-toggle {
+  background: var(--stitch-surface-low) !important;
+  border: 1px solid var(--stitch-border-line);
+}
+
+.mode-toggle button {
+  color: var(--stitch-text-muted) !important;
+}
+
+.mode-toggle button[aria-pressed="true"] {
+  background: var(--stitch-primary-container) !important;
+  color: #ffffff !important;
+}
+
+.chat-logo,
+.welcome-orb {
+  background: var(--stitch-icon-bg) !important;
+  color: var(--stitch-icon-color) !important;
+}
+
+.chat-welcome {
+  padding: 20px 0 18px !important;
+}
+
+.welcome-orb {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 18px !important;
+  margin-bottom: 14px !important;
+}
+
+.chat-welcome h2 {
+  font-size: clamp(22px, 2.4vw, 28px) !important;
+  margin: 8px 0 !important;
+}
+
+.composer-area {
+  margin-top: 12px !important;
+}
+
 input:focus, textarea:focus, select:focus {
   outline: 2px solid var(--stitch-primary);
   outline-offset: 1px;
