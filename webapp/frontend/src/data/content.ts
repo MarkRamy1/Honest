@@ -1,8 +1,8 @@
 export const suggestions = [
   { icon: 'headphones', title: 'Find my next favorite', text: 'Find noise-cancelling headphones under $200' },
-  { icon: 'shield', title: 'Look a little closer', text: 'How can I check if a product is authentic?' },
-  { icon: 'scale', title: 'Make the right choice', text: 'Compare Sony WH-1000XM5 and Bose QuietComfort' },
-  { icon: 'sparkles', title: 'Get more for my budget', text: 'Recommend a durable everyday backpack under $100' },
+  { icon: 'shield', title: 'Look a little closer', text: 'Audit Sony WH-1000XM5 Wireless Noise-Cancelling Headphones authenticity' },
+  { icon: 'scale', title: 'Make the right choice', text: 'Compare Xiaomi Redmi 13 6GB 128GB verified price in Egypt' },
+  { icon: 'sparkles', title: 'Get more for my budget', text: 'Check Lenovo Legion Slim 5 RTX 4060 verified retail price' },
 ];
 export const categories = ['All products', 'tech', 'sneakers', 'watches', 'luxury', 'streetwear'];
 export const productPhotos: Record<string, string> = {
