@@ -339,9 +339,9 @@ export function Assistant({
                   setDraft(p.query);
                 }}
                 style={{
-                  background: 'rgba(99, 102, 241, 0.08)',
-                  border: '1px solid rgba(99, 102, 241, 0.25)',
-                  color: '#4f46e5',
+                  background: 'var(--stitch-icon-bg, rgba(99, 102, 241, 0.12))',
+                  border: '1px solid rgba(129, 140, 248, 0.35)',
+                  color: 'var(--stitch-primary, #818cf8)',
                   padding: '5px 12px',
                   borderRadius: '999px',
                   fontSize: '11px',
@@ -351,7 +351,7 @@ export function Assistant({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  transition: 'all 0.2s'
+                  transition: 'background-color 0.2s, border-color 0.2s'
                 }}
               >
                 <span>{p.icon}</span>

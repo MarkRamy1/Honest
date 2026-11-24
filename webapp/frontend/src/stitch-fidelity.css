@@ -39,6 +39,10 @@
 
 [data-theme="dark"], html.dark {
   color-scheme: dark;
+  --surface: #151d2d;
+  --line: rgba(255, 255, 255, 0.1);
+  --muted: #94a3b8;
+  --navy: #f8fafc;
   --stitch-primary: #818cf8;
   --stitch-primary-container: #4351b8;
   --stitch-primary-hover: #4f5fd4;
@@ -860,9 +864,23 @@ select,
 select option,
 .composer-options select,
 .composer-options select option {
+  background: var(--stitch-surface-low) !important;
   background-color: var(--stitch-surface-low) !important;
   color: var(--stitch-text-primary) !important;
   border: 1px solid var(--stitch-border-line) !important;
+}
+
+.chat-page {
+  height: auto !important;
+  min-height: calc(100dvh - 66px) !important;
+}
+
+.chat-main {
+  overflow: visible !important;
+}
+
+.chat-scroll {
+  overflow-y: visible !important;
 }
 
 .mode-toggle {
