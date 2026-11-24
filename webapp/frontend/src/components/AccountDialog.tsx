@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 
 const DEFAULT_GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-  '961289606983-08579ckg98ts6q6gfofi5l1mppse3bn2.apps.googleusercontent.com';
+  '931566699554-71c8djg023d323tv1bkaaoe8gqvj0cl5.apps.googleusercontent.com';
 
 export interface AccountDialogProps {
   readonly user: User | null;

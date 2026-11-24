@@ -16,7 +16,7 @@ services:
       - key: CORS_ORIGINS
         value: "https://markramy1.github.io,http://localhost:5173"
       - key: GOOGLE_CLIENT_ID
-        value: "961289606983-08579ckg98ts6q6gfofi5l1mppse3bn2.apps.googleusercontent.com"
+        value: "931566699554-71c8djg023d323tv1bkaaoe8gqvj0cl5.apps.googleusercontent.com"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
